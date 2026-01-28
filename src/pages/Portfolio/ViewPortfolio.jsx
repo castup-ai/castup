@@ -1,11 +1,17 @@
 import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 import { useData } from '../../context/DataContext'
+import { useAuth } from '../../context/AuthContext'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
 export default function ViewPortfolio() {
     const { id } = useParams()
     const { getProfileById } = useData()
+    const { user } = useAuth()
     const profile = getProfileById(id)
+
+    const [connectionStatus, setConnectionStatus] = useState('none') // 'none', 'pending', 'connected'
+    const [isSaved, setIsSaved] = useState(false)
 
     if (!profile) {
         return (
@@ -21,6 +27,41 @@ export default function ViewPortfolio() {
 
     const skillsList = Array.isArray(profile.skills) ? profile.skills : []
     const socialLinks = profile.socialLinks || {}
+
+    // Check if viewing own profile
+    const isOwnProfile = user && user.id === profile.id
+
+    const handleConnect = () => {
+        if (connectionStatus === 'none') {
+            setConnectionStatus('pending')
+            // TODO: Implement backend API call to send connection request
+            // For now, just show pending state
+            alert('Connection request sent! 🤝')
+        } else if (connectionStatus === 'connected') {
+            // Already connected
+            alert('You are already connected with this user')
+        }
+    }
+
+    const handleSave = () => {
+        setIsSaved(!isSaved)
+        if (!isSaved) {
+            alert('Profile saved to your favorites! ⭐')
+        } else {
+            alert('Profile removed from favorites')
+        }
+    }
+
+    const getConnectButtonText = () => {
+        switch (connectionStatus) {
+            case 'pending':
+                return '⏳ Pending'
+            case 'connected':
+                return '✓ Connected'
+            default:
+                return 'Connect'
+        }
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -60,16 +101,73 @@ export default function ViewPortfolio() {
                             )}
                         </div>
                     </div>
-                    <div className="flex gap-3">
-                        <button className="btn-primary">Connect</button>
-                        <button className="btn-secondary">⭐ Save</button>
-                    </div>
+                    {!isOwnProfile ? (
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleConnect}
+                                disabled={connectionStatus === 'pending'}
+                                className={`btn-primary ${connectionStatus === 'pending' ? 'opacity-60 cursor-not-allowed' : ''} ${connectionStatus === 'connected' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                            >
+                                {getConnectButtonText()}
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className={`btn-secondary ${isSaved ? 'bg-gold-500/20 text-gold-400' : ''}`}
+                            >
+                                {isSaved ? '⭐ Saved' : '⭐ Save'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="text-center md:text-right">
+                            <p className="text-sm text-gray-400 mb-2">Your Profile</p>
+                            <div className="flex items-center justify-center md:justify-end gap-4">
+                                <div className="glass-card px-4 py-2 rounded-lg">
+                                    <span className="text-gold-400 font-bold">0</span>
+                                    <span className="text-gray-400 text-sm ml-2">Connections</span>
+                                </div>
+                                <div className="glass-card px-4 py-2 rounded-lg">
+                                    <span className="text-gold-400 font-bold">{profile.views || 0}</span>
+                                    <span className="text-gray-400 text-sm ml-2">Profile Views</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-8">
+                    {/* My Connections Section - Only show on own profile */}
+                    {isOwnProfile && (
+                        <div className="glass-card p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-2xl font-display font-bold">My Connections</h2>
+                                <span className="text-sm text-gray-400">0 connections</span>
+                            </div>
+                            <div className="text-center py-8">
+                                <div className="text-6xl mb-4">🤝</div>
+                                <p className="text-gray-400 mb-4">You haven't connected with anyone yet</p>
+                                <p className="text-sm text-gray-500">
+                                    Visit other users' profiles and click "Connect" to build your network
+                                </p>
+                            </div>
+                            {/* TODO: When backend is ready, show actual connections like this:
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {connections.map(connection => (
+                                    <div key={connection.id} className="glass-card p-4 text-center hover:bg-white/5 cursor-pointer transition-colors">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center text-2xl font-bold text-dark-950 mx-auto mb-2">
+                                            {connection.name?.charAt(0)}
+                                        </div>
+                                        <p className="font-semibold text-sm">{connection.name}</p>
+                                        <p className="text-xs text-gray-400">{connection.role}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            */}
+                        </div>
+                    )}
+
                     {/* Bio */}
                     <div className="glass-card p-6">
                         <h2 className="text-2xl font-display font-bold mb-4">About</h2>
