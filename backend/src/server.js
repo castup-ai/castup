@@ -31,8 +31,30 @@ app.use('/api/portfolios', portfolioRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/casting', castingRoutes);
 
-// Health check
+// Root route - API Welcome
+app.get('/', (req, res) => {
+    res.json({
+        name: 'CastUp API',
+        version: '1.0.0',
+        status: 'running',
+        message: 'Welcome to CastUp - AI-Powered Cinema Networking Platform API',
+        endpoints: {
+            health: '/api/health',
+            auth: '/api/auth/*',
+            users: '/api/users/*',
+            portfolios: '/api/portfolios/*',
+            files: '/api/files/*',
+            casting: '/api/casting/*'
+        }
+    });
+});
+
+// Health check (accessible at both /api/health and /health for compatibility)
 app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', message: 'CastUp API is running' });
+});
+
+app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'CastUp API is running' });
 });
 
