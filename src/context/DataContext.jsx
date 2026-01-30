@@ -166,12 +166,14 @@ export function DataProvider({ children }) {
         updateProfile,
         getProfileById,
         createCastingCall,
+        addCastingCall: createCastingCall, // Alias
         updateCastingCall,
         applyCastingCall,
         addNotification,
         markNotificationRead,
         clearAllNotifications,
         uploadFile,
+        addFile: uploadFile, // Alias  
         shareFile,
         unreadCount: notifications.filter(n => !n.read).length,
     }
