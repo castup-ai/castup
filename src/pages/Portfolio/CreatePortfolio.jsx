@@ -5,6 +5,7 @@ import { useData } from '../../context/DataContext'
 import { useAI } from '../../context/AIContext'
 import Input from '../../components/Input'
 import Button from '../../components/Button'
+import { ArrowLeft } from 'lucide-react'
 
 export default function CreatePortfolio() {
     const { user } = useAuth()
@@ -70,6 +71,15 @@ export default function CreatePortfolio() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    Back
+                </button>
+
                 {/* Header */}
                 <div className="mb-8 text-center">
                     <h1 className="text-4xl font-display font-bold mb-2">
@@ -193,8 +203,8 @@ export default function CreatePortfolio() {
                                         <div className="space-y-3">
                                             {aiSuggestions.suggestions.map((suggestion, index) => (
                                                 <div key={index} className={`p-3 rounded-lg ${suggestion.priority === 'high' ? 'bg-red-500/10 border border-red-500/30' :
-                                                        suggestion.priority === 'medium' ? 'bg-yellow-500/10 border border-yellow-500/30' :
-                                                            'bg-blue-500/10 border border-blue-500/30'
+                                                    suggestion.priority === 'medium' ? 'bg-yellow-500/10 border border-yellow-500/30' :
+                                                        'bg-blue-500/10 border border-blue-500/30'
                                                     }`}>
                                                     <p className="text-sm text-gray-200">{suggestion.message}</p>
                                                 </div>
