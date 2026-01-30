@@ -15,16 +15,24 @@ export default function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { profiles } = require('../context/DataContext').useData();
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
+    const handleViewProfile = () => {
+        const userProfile = profiles?.find(p => p.userId === user?.id);
+        if (userProfile) {
+            navigate(`/portfolio/${userProfile.id}`);
+        }
+    };
+
     const navItems = [
         { path: '/dashboard', icon: Home, label: 'Home' },
         { path: '/explore', icon: Users, label: 'Explore' },
-        { path: '/portfolio/edit', icon: Briefcase, label: 'My Portfolio' },
+        { path: '/portfolio/edit', icon: Briefcase, label: 'Edit Portfolio' },
         { path: '/casting', icon: Film, label: 'Casting Calls' },
         { path: '/files', icon: FolderLock, label: 'Script Locker' },
     ];
@@ -54,8 +62,8 @@ export default function Sidebar() {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${active
-                                    ? 'bg-[#FFF8F0] text-[#FF7A5A]'
-                                    : 'text-[#6B6B6B] hover:bg-[#FFF8F0] hover:text-[#3C3C3C]'
+                                ? 'bg-[#FFF8F0] text-[#FF7A5A]'
+                                : 'text-[#6B6B6B] hover:bg-[#FFF8F0] hover:text-[#3C3C3C]'
                                 }`}
                         >
                             <Icon className="w-5 h-5" />
@@ -67,16 +75,19 @@ export default function Sidebar() {
 
             {/* User Menu */}
             <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFF8F0] mb-2">
+                <button
+                    onClick={handleViewProfile}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFF8F0] mb-2 hover:bg-[#FFE5DD] transition-colors cursor-pointer"
+                >
                     <Avatar>
                         <AvatarImage src={user?.profilePicture} />
                         <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-left">
                         <div className="text-[#3C3C3C] font-semibold truncate">{user?.name}</div>
                         <div className="text-sm text-[#6B6B6B]">{user?.department || user?.role}</div>
                     </div>
-                </div>
+                </button>
                 <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
