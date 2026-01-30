@@ -24,10 +24,7 @@ export default function Sidebar() {
     };
 
     const handleViewProfile = () => {
-        const userProfile = profiles?.find(p => p.userId === user?.id);
-        if (userProfile) {
-            navigate(`/portfolio/${userProfile.id}`);
-        }
+        navigate('/profile');
     };
 
     const navItems = [

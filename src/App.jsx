@@ -19,6 +19,7 @@ import ViewCastingCall from './pages/Casting/ViewCastingCall'
 import ScriptLocker from './pages/Files/ScriptLocker'
 import SharedFiles from './pages/Files/SharedFiles'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
+import Profile from './pages/Profile/Profile';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -51,6 +52,9 @@ function App() {
                             } />
                             <Route path="/portfolio/edit" element={
                                 <ProtectedRoute><EditPortfolio /></ProtectedRoute>
+                            } />
+                            <Route path="/profile" element={
+                                <ProtectedRoute><Profile /></ProtectedRoute>
                             } />
                             <Route path="/explore" element={
                                 <ProtectedRoute><ExplorePage /></ProtectedRoute>
