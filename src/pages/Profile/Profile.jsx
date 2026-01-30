@@ -45,16 +45,42 @@ export default function Profile() {
         setProfilePhoto('');
     };
 
-    const handleSave = () => {
+    const handleSavePhoto = async () => {
+        if (!profilePhoto) return;
+
         setIsSaving(true);
-        setTimeout(() => {
-            updateUser({
+        try {
+            // Update user profile immediately in local state
+            await updateUser({
+                profilePicture: profilePhoto,
+            });
+
+            alert('Profile photo saved successfully!');
+        } catch (error) {
+            console.error('Error saving photo:', error);
+            alert('Failed to save photo. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Update all user data including photo
+            await updateUser({
                 ...formData,
                 profilePicture: profilePhoto,
             });
-            setIsSaving(false);
+
             setIsEditing(false);
-        }, 1000);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Failed to save profile. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const connections = userProfile?.connections || [];
@@ -124,6 +150,14 @@ export default function Profile() {
                                                 className="hidden"
                                             />
                                         </label>
+                                        {profilePhoto && profilePhoto !== (user?.profilePicture || userProfile?.profilePicture) && (
+                                            <Button
+                                                onClick={handleSavePhoto}
+                                                disabled={isSaving}
+                                            >
+                                                {isSaving ? 'Saving...' : 'Save Photo'}
+                                            </Button>
+                                        )}
                                         {profilePhoto && (
                                             <Button
                                                 variant="outline"
