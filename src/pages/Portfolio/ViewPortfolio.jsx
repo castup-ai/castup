@@ -88,7 +88,7 @@ export default function ViewPortfolio() {
                     )}
 
                     {/* Skills */}
-                    {profile.skills && profile.skills.length > 0 && (
+                    {profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0 && (
                         <Card>
                             <CardContent className="p-6">
                                 <h2 className="text-xl font-bold text-[#3C3C3C] mb-3">Skills</h2>
@@ -102,7 +102,7 @@ export default function ViewPortfolio() {
                     )}
 
                     {/* Experience */}
-                    {profile.experience && profile.experience.length > 0 && (
+                    {profile.experience && Array.isArray(profile.experience) && profile.experience.length > 0 && (
                         <Card>
                             <CardContent className="p-6">
                                 <h2 className="text-xl font-bold text-[#3C3C3C] mb-3">Experience</h2>
@@ -170,14 +170,14 @@ export default function ViewPortfolio() {
                     )}
 
                     {/* Photos */}
-                    {profile.photos && profile.photos.length > 0 && (
+                    {profile.photos && Array.isArray(profile.photos) && profile.photos.length > 0 && (
                         <Card>
                             <CardContent className="p-6">
                                 <h2 className="text-xl font-bold text-[#3C3C3C] mb-4 flex items-center gap-2">
                                     <Image className="w-5 h-5" />
                                     Photos
                                 </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">\
                                     {profile.photos.map((photo, index) => (
                                         <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                                             <img
@@ -193,7 +193,7 @@ export default function ViewPortfolio() {
                     )}
 
                     {/* Videos */}
-                    {profile.videos && profile.videos.length > 0 && (
+                    {profile.videos && Array.isArray(profile.videos) && profile.videos.length > 0 && (
                         <Card>
                             <CardContent className="p-6">
                                 <h2 className="text-xl font-bold text-[#3C3C3C] mb-4 flex items-center gap-2">
