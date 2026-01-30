@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import {
     Home,
     Users,
@@ -15,7 +16,7 @@ export default function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const { profiles } = require('../context/DataContext').useData();
+    const { profiles } = useData();
 
     const handleLogout = () => {
         logout();
