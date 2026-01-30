@@ -1,23 +1,60 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import TopHeader from '../../components/TopHeader';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { MapPin, Mail, Phone, Globe, Youtube, Instagram, Linkedin, Image, Video } from 'lucide-react';
+import { MapPin, Mail, Phone, Globe, Youtube, Instagram, Linkedin, Image, Video, ArrowLeft } from 'lucide-react';
 
 export default function ViewPortfolio() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const { profiles } = useData();
     const [profile, setProfile] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
 
     useEffect(() => {
         // Handle both string and number IDs
         const foundProfile = profiles.find(p => p.id == id || p.id === parseInt(id));
         setProfile(foundProfile);
-    }, [id, profiles]);
+
+        // Check if already connected
+        if (foundProfile && user) {
+            const userProfile = profiles.find(p => p.id === user.id || p.userId === user.id);
+            if (userProfile?.connections) {
+                setIsConnected(userProfile.connections.includes(foundProfile.id) || userProfile.connections.includes(foundProfile.userId));
+            }
+        }
+    }, [id, profiles, user]);
+
+    const handleConnect = async () => {
+        if (!user) {
+            alert('Please login to connect with users');
+            return;
+        }
+
+        setIsConnecting(true);
+        try {
+            // TODO: Call API to connect/disconnect
+            // For now, just toggle local state
+            setIsConnected(!isConnected);
+
+            // Show success message
+            setTimeout(() => {
+                alert(isConnected ? 'Disconnected successfully' : 'Connection request sent!');
+            }, 300);
+        } catch (error) {
+            console.error('Error toggling connection:', error);
+            alert('Failed to update connection');
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     if (!profile) {
         return (
@@ -38,6 +75,17 @@ export default function ViewPortfolio() {
         <DashboardLayout>
             <TopHeader title={`${profile.name}'s Portfolio`} />
             <main className="flex-1 overflow-auto p-8">
+                {/* Back Button */}
+                <div className="max-w-5xl mx-auto mb-4">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate(-1)}
+                        className="text-[#6B6B6B] hover:text-[#3C3C3C]"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                    </Button>
+                </div>
                 <div className="max-w-5xl mx-auto space-y-6">
                     {/* Header Card */}
                     <Card>
@@ -69,8 +117,19 @@ export default function ViewPortfolio() {
                                         )}
                                     </div>
 
-                                    <div className="mt-4">
-                                        <Button>Connect</Button>
+                                    <div className="mt-4 flex gap-3">
+                                        <Button
+                                            onClick={handleConnect}
+                                            disabled={isConnecting || !user || profile.id === user?.id}
+                                            className={isConnected ? 'bg-[#6B6B6B] hover:bg-[#3C3C3C]' : ''}
+                                        >
+                                            {isConnecting ? 'Processing...' : isConnected ? 'Disconnect' : 'Connect'}
+                                        </Button>
+                                        {profile.email && (
+                                            <Button variant="outline">
+                                                Message
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
