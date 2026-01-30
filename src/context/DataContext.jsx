@@ -1,182 +1,234 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { portfolioAPI, castingAPI, fileAPI, userAPI } from '../services/api';
 
-const DataContext = createContext()
+const DataContext = createContext();
 
 export function useData() {
-    const context = useContext(DataContext)
+    const context = useContext(DataContext);
     if (!context) {
-        throw new Error('useData must be used within DataProvider')
+        throw new Error('useData must be used within DataProvider');
     }
-    return context
+    return context;
 }
 
 export function DataProvider({ children }) {
-    const [profiles, setProfiles] = useState([])
-    const [castingCalls, setCastingCalls] = useState([])
-    const [notifications, setNotifications] = useState([])
-    const [files, setFiles] = useState([])
+    const { user } = useAuth();
+    const [profiles, setProfiles] = useState([]);
+    const [castingCalls, setCastingCalls] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [files, setFiles] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Load data from localStorage on mount
+    // Load data from backend API on mount
     useEffect(() => {
-        const savedProfiles = localStorage.getItem('castup_profiles')
-        const savedCastingCalls = localStorage.getItem('castup_casting_calls')
-        const savedNotifications = localStorage.getItem('castup_notifications')
-        const savedFiles = localStorage.getItem('castup_files')
+        if (user) {
+            loadAllData();
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
 
-        if (savedProfiles) setProfiles(JSON.parse(savedProfiles))
-        if (savedCastingCalls) setCastingCalls(JSON.parse(savedCastingCalls))
-        if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
-        if (savedFiles) setFiles(JSON.parse(savedFiles))
-    }, [])
+    const loadAllData = async () => {
+        try {
+            setLoading(true);
 
-    // Save to localStorage whenever data changes
-    useEffect(() => {
-        localStorage.setItem('castup_profiles', JSON.stringify(profiles))
-    }, [profiles])
+            // Load all data in parallel
+            const [profilesRes, castingRes, filesRes] = await Promise.all([
+                userAPI.getUsers().catch(() => ({ data: { users: [] } })),
+                castingAPI.getAll().catch(() => ({ data: { castingCalls: [] } })),
+                fileAPI.getMyFiles().catch(() => ({ data: { files: [] } }))
+            ]);
 
-    useEffect(() => {
-        localStorage.setItem('castup_casting_calls', JSON.stringify(castingCalls))
-    }, [castingCalls])
-
-    useEffect(() => {
-        localStorage.setItem('castup_notifications', JSON.stringify(notifications))
-    }, [notifications])
-
-    useEffect(() => {
-        localStorage.setItem('castup_files', JSON.stringify(files))
-    }, [files])
+            setProfiles(profilesRes.data.users || []);
+            setCastingCalls(castingRes.data.castingCalls || []);
+            setFiles(filesRes.data.files || []);
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Profile methods
-    const createProfile = (profileData) => {
-        const newProfile = {
-            id: Date.now(),
-            ...profileData,
-            createdAt: new Date().toISOString(),
-            views: 0,
-            rating: 0,
+    const createProfile = async (profileData) => {
+        try {
+            const response = await portfolioAPI.createOrUpdate(profileData);
+            const newProfile = response.data.portfolio;
+
+            // Update local state
+            setProfiles(prev => {
+                const existing = prev.find(p => p.id === newProfile.id);
+                if (existing) {
+                    return prev.map(p => p.id === newProfile.id ? newProfile : p);
+                }
+                return [...prev, newProfile];
+            });
+
+            return newProfile;
+        } catch (error) {
+            console.error('Error creating profile:', error);
+            throw error;
         }
-        setProfiles([...profiles, newProfile])
-        return newProfile
-    }
+    };
 
-    const updateProfile = (profileId, updates) => {
-        setProfiles(profiles.map(p =>
-            p.id === profileId ? { ...p, ...updates } : p
-        ))
-    }
+    const updateProfile = async (profileId, updates) => {
+        try {
+            const response = await portfolioAPI.createOrUpdate({ ...updates, id: profileId });
+            const updatedProfile = response.data.portfolio;
 
-    const getProfileById = (profileId) => {
-        return profiles.find(p => p.id === parseInt(profileId))
-    }
+            setProfiles(prev => prev.map(p =>
+                p.id === profileId ? updatedProfile : p
+            ));
+
+            return updatedProfile;
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        }
+    };
+
+    const getProfileById = async (profileId) => {
+        try {
+            // First check local state
+            const localProfile = profiles.find(p => p.id == profileId || p.id === parseInt(profileId));
+            if (localProfile) return localProfile;
+
+            // If not in local state, fetch from API
+            const response = await portfolioAPI.getPortfolio(profileId);
+            return response.data.portfolio;
+        } catch (error) {
+            console.error('Error getting profile:', error);
+            return null;
+        }
+    };
 
     // Casting Call methods
-    const createCastingCall = (castingData) => {
-        const newCasting = {
-            id: Date.now(),
-            ...castingData,
-            createdAt: new Date().toISOString(),
-            applications: [],
-            status: 'Open',
+    const createCastingCall = async (castingData) => {
+        try {
+            const response = await castingAPI.create(castingData);
+            const newCasting = response.data.castingCall;
+
+            setCastingCalls(prev => [newCasting, ...prev]);
+            return newCasting;
+        } catch (error) {
+            console.error('Error creating casting call:', error);
+            throw error;
         }
-        setCastingCalls([...castingCalls, newCasting])
-        return newCasting
-    }
+    };
 
-    const updateCastingCall = (castingId, updates) => {
-        setCastingCalls(castingCalls.map(c =>
-            c.id === castingId ? { ...c, ...updates } : c
-        ))
-    }
+    const addCastingCall = createCastingCall; // Alias
 
-    const applyCastingCall = (castingId, userId, message) => {
-        const application = {
-            userId,
-            castingId,
-            message,
-            appliedAt: new Date().toISOString(),
-            status: 'Pending',
+    const updateCastingCall = async (castingId, updates) => {
+        try {
+            setCastingCalls(prev => prev.map(c =>
+                c.id === castingId ? { ...c, ...updates } : c
+            ));
+        } catch (error) {
+            console.error('Error updating casting call:', error);
+            throw error;
         }
+    };
 
-        updateCastingCall(castingId, {
-            applications: [...castingCalls.find(c => c.id === castingId)?.applications || [], application]
-        })
+    const applyCastingCall = async (castingId, userId, message) => {
+        try {
+            await castingAPI.apply(castingId, message);
 
-        addNotification({
-            type: 'application',
-            message: 'You applied for a casting call',
-            castingId,
-        })
-    }
+            // Reload casting calls to get updated data
+            const response = await castingAPI.getAll();
+            setCastingCalls(response.data.castingCalls || []);
 
-    // Notification methods
+            addNotification({
+                type: 'application',
+                message: 'You applied for a casting call',
+                castingId,
+            });
+        } catch (error) {
+            console.error('Error applying to casting call:', error);
+            throw error;
+        }
+    };
+
+    // Notification methods (keep local for now)
     const addNotification = (notification) => {
         const newNotification = {
             id: Date.now(),
             ...notification,
             createdAt: new Date().toISOString(),
             read: false,
-        }
-        setNotifications([newNotification, ...notifications])
-    }
+        };
+        setNotifications(prev => [newNotification, ...prev]);
+    };
 
     const markNotificationRead = (notificationId) => {
-        setNotifications(notifications.map(n =>
+        setNotifications(prev => prev.map(n =>
             n.id === notificationId ? { ...n, read: true } : n
-        ))
-    }
+        ));
+    };
 
     const clearAllNotifications = () => {
-        setNotifications([])
-    }
+        setNotifications([]);
+    };
 
     // File methods
-    const uploadFile = (fileData) => {
-        const newFile = {
-            id: Date.now(),
-            ...fileData,
-            uploadedAt: new Date().toISOString(),
-            sharedWith: [],
-        }
-        setFiles([...files, newFile])
-        return newFile
-    }
+    const uploadFile = async (fileData) => {
+        try {
+            let response;
 
-    const shareFile = (fileId, userId) => {
-        setFiles(files.map(f => {
-            if (f.id === fileId) {
-                return {
-                    ...f,
-                    sharedWith: [...f.sharedWith, {
-                        userId,
-                        sharedAt: new Date().toISOString(),
-                        accessToken: 'token_' + Date.now(),
-                    }]
-                }
+            if (fileData instanceof FormData) {
+                // File upload from computer
+                response = await fileAPI.uploadFile(fileData);
+            } else if (fileData.url) {
+                // URL upload (YouTube, Instagram, etc.)
+                response = await fileAPI.uploadFromUrl(fileData);
             }
-            return f
-        }))
-    }
+
+            const newFile = response.data.file;
+            setFiles(prev => [newFile, ...prev]);
+            return newFile;
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            throw error;
+        }
+    };
+
+    const addFile = uploadFile; // Alias
+
+    const shareFile = async (fileId, userId) => {
+        try {
+            await fileAPI.shareFile(fileId, [userId]);
+
+            // Reload files to get updated data
+            const response = await fileAPI.getMyFiles();
+            setFiles(response.data.files || []);
+        } catch (error) {
+            console.error('Error sharing file:', error);
+            throw error;
+        }
+    };
 
     const value = {
         profiles,
         castingCalls,
         notifications,
         files,
+        loading,
         createProfile,
         updateProfile,
         getProfileById,
         createCastingCall,
-        addCastingCall: createCastingCall, // Alias
+        addCastingCall,
         updateCastingCall,
         applyCastingCall,
         addNotification,
         markNotificationRead,
         clearAllNotifications,
         uploadFile,
-        addFile: uploadFile, // Alias  
+        addFile,
         shareFile,
+        refreshData: loadAllData,
         unreadCount: notifications.filter(n => !n.read).length,
-    }
+    };
 
-    return <DataContext.Provider value={value}>{children}</DataContext.Provider>
+    return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
