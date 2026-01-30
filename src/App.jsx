@@ -8,7 +8,7 @@ import LandingPage from './pages/Home/LandingPage'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
 import AuthCallback from './pages/Auth/AuthCallback'
-import Dashboard from './pages/Dashboard/Dashboard'
+import Dashboard from './pages/Home/Dashboard'
 import CreatePortfolio from './pages/Portfolio/CreatePortfolio'
 import ViewPortfolio from './pages/Portfolio/ViewPortfolio'
 import EditPortfolio from './pages/Portfolio/EditPortfolio'
@@ -36,54 +36,48 @@ function App() {
             <AuthProvider>
                 <DataProvider>
                     <AIProvider>
-                        <div className="min-h-screen flex flex-col">
-                            <Navbar />
-                            <main className="flex-1">
-                                <Routes>
-                                    {/* Public Routes */}
-                                    <Route path="/" element={<LandingPage />} />
-                                    <Route path="/login" element={<Login />} />
-                                    <Route path="/signup" element={<Signup />} />
-                                    <Route path="/auth/callback" element={<AuthCallback />} />
+                        <Routes>
+                            {/* Public Routes */}
+                            <Route path="/" element={<LandingPage />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/signup" element={<Signup />} />
+                            <Route path="/auth/callback" element={<AuthCallback />} />
 
-                                    {/* Protected Routes */}
-                                    <Route path="/dashboard" element={
-                                        <ProtectedRoute><Dashboard /></ProtectedRoute>
-                                    } />
-                                    <Route path="/portfolio/create" element={
-                                        <ProtectedRoute><CreatePortfolio /></ProtectedRoute>
-                                    } />
-                                    <Route path="/portfolio/:id" element={
-                                        <ProtectedRoute><ViewPortfolio /></ProtectedRoute>
-                                    } />
-                                    <Route path="/portfolio/edit" element={
-                                        <ProtectedRoute><EditPortfolio /></ProtectedRoute>
-                                    } />
-                                    <Route path="/explore" element={
-                                        <ProtectedRoute><ExplorePage /></ProtectedRoute>
-                                    } />
-                                    <Route path="/casting" element={
-                                        <ProtectedRoute><CastingDashboard /></ProtectedRoute>
-                                    } />
-                                    <Route path="/casting/create" element={
-                                        <ProtectedRoute><CreateCastingCall /></ProtectedRoute>
-                                    } />
-                                    <Route path="/casting/:id" element={
-                                        <ProtectedRoute><ViewCastingCall /></ProtectedRoute>
-                                    } />
-                                    <Route path="/files" element={
-                                        <ProtectedRoute><ScriptLocker /></ProtectedRoute>
-                                    } />
-                                    <Route path="/shared" element={
-                                        <ProtectedRoute><SharedFiles /></ProtectedRoute>
-                                    } />
-                                    <Route path="/notifications" element={
-                                        <ProtectedRoute><NotificationsPage /></ProtectedRoute>
-                                    } />
-                                </Routes>
-                            </main>
-                            <Footer />
-                        </div>
+                            {/* Protected Routes */}
+                            <Route path="/dashboard" element={
+                                <ProtectedRoute><Dashboard /></ProtectedRoute>
+                            } />
+                            <Route path="/portfolio/create" element={
+                                <ProtectedRoute><CreatePortfolio /></ProtectedRoute>
+                            } />
+                            <Route path="/portfolio/:id" element={
+                                <ProtectedRoute><ViewPortfolio /></ProtectedRoute>
+                            } />
+                            <Route path="/portfolio/edit" element={
+                                <ProtectedRoute><EditPortfolio /></ProtectedRoute>
+                            } />
+                            <Route path="/explore" element={
+                                <ProtectedRoute><ExplorePage /></ProtectedRoute>
+                            } />
+                            <Route path="/casting" element={
+                                <ProtectedRoute><CastingDashboard /></ProtectedRoute>
+                            } />
+                            <Route path="/casting/create" element={
+                                <ProtectedRoute><CreateCastingCall /></ProtectedRoute>
+                            } />
+                            <Route path="/casting/:id" element={
+                                <ProtectedRoute><ViewCastingCall /></ProtectedRoute>
+                            } />
+                            <Route path="/files" element={
+                                <ProtectedRoute><ScriptLocker /></ProtectedRoute>
+                            } />
+                            <Route path="/shared" element={
+                                <ProtectedRoute><SharedFiles /></ProtectedRoute>
+                            } />
+                            <Route path="/notifications" element={
+                                <ProtectedRoute><NotificationsPage /></ProtectedRoute>
+                            } />
+                        </Routes>
                     </AIProvider>
                 </DataProvider>
             </AuthProvider>

@@ -1,197 +1,196 @@
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui/button';
+import { Video, Sparkles, Users, Film, Zap, Star } from 'lucide-react';
 
 export default function LandingPage() {
-    const { isAuthenticated } = useAuth()
-    const navigate = useNavigate()
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/dashboard')
+            navigate('/dashboard');
         }
-    }, [isAuthenticated, navigate])
+    }, [isAuthenticated, navigate]);
+
+    const features = [
+        {
+            icon: Sparkles,
+            title: 'AI Smart Matching',
+            description: 'Smart matching powered by AI to find the perfect talent for your project',
+        },
+        {
+            icon: Users,
+            title: 'Smart Portfolios',
+            description: 'Showcase your work with AI-enhanced profiles that get noticed',
+        },
+        {
+            icon: Film,
+            title: 'Casting Dashboard',
+            description: 'Post casting calls, review applications, and manage projects',
+        },
+        {
+            icon: Zap,
+            title: 'Instant Connections',
+            description: 'Connect with industry professionals in real-time',
+        },
+        {
+            icon: Star,
+            title: 'Verified Credentials',
+            description: 'Build trust with verified experience and credentials',
+        },
+    ];
 
     return (
-        <div className="min-h-screen">
-            {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                {/* Animated Background */}
-                <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-20 left-20 w-72 h-72 bg-gold-500 rounded-full blur-3xl animate-pulse-slow" />
-                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary-500 rounded-full blur-3xl animate-pulse-slow delay-1000" />
+        <div className="min-h-screen bg-[#FFF8F0]">
+            {/* Navigation */}
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF7A5A] to-[#FFC107] flex items-center justify-center">
+                            <Video className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-[#3C3C3C] text-xl font-bold">CastUp</span>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <Link to="/login" className="px-6 py-2.5 text-[#3C3C3C] hover:text-[#FF7A5A] transition-colors font-medium">
+                            Log In
+                        </Link>
+                        <Link to="/signup">
+                            <Button className="px-6 py-2.5">
+                                Join for Free
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
+            </nav>
 
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="text-center max-w-5xl mx-auto space-y-8 animate-fade-in">
-                        <div className="inline-block mb-4">
-                            <span className="badge-primary text-sm px-6 py-2 animate-scale-in">
-                                ✨ AI-Powered Platform
-                            </span>
+            {/* Hero Section */}
+            <section className="pt-32 pb-20 px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm">
+                                <Sparkles className="w-4 h-4 text-[#FFC107]" />
+                                <span className="text-sm text-[#6B6B6B]">AI-Powered Film Networking</span>
+                            </div>
+
+                            <h1 className="text-5xl lg:text-6xl text-[#3C3C3C] font-bold leading-tight">
+                                CastUp: Where Cinema Connects
+                            </h1>
+
+                            <p className="text-xl text-[#6B6B6B]">
+                                Your AI-powered network for film opportunities. Connect with talent, discover projects, and bring your creative vision to life.
+                            </p>
+
+                            <div className="flex flex-wrap gap-4 pt-4">
+                                <Link to="/signup">
+                                    <Button size="lg" className="text-lg px-8 py-6">
+                                        Join for Free
+                                    </Button>
+                                </Link>
+                                <Link to="/explore">
+                                    <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                                        Explore Talent
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            <div className="flex items-center gap-8 pt-6">
+                                <div>
+                                    <div className="text-3xl text-[#3C3C3C] font-bold">10K+</div>
+                                    <div className="text-sm text-[#6B6B6B]">Active Members</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl text-[#3C3C3C] font-bold">500+</div>
+                                    <div className="text-sm text-[#6B6B6B]">Projects Posted</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl text-[#3C3C3C] font-bold">98%</div>
+                                    <div className="text-sm text-[#6B6B6B]">Match Success</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight">
-                            Connect. Showcase.{' '}
-                            <span className="text-gradient">Transform</span>{' '}
-                            Your Cinema Career
-                        </h1>
-
-                        <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-                            CastUp brings together actors, directors, producers, and technicians on an intelligent platform that matches talent with opportunity using cutting-edge AI.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-                            <Link to="/signup" className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
-                                🚀 Get Started Free
-                            </Link>
-                            <Link to="/explore" className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto">
-                                🔍 Explore Talent
-                            </Link>
-                        </div>
-
-                        <div className="flex items-center justify-center gap-8 pt-12 text-sm text-gray-400">
-                            <div className="flex items-center gap-2">
-                                <span className="text-gold-500 text-2xl">✓</span>
-                                <span>10,000+ Professionals</span>
+                        <div className="relative animate-slide-up">
+                            <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#FF7A5A]/20 to-[#FFC107]/20">
+                                <img
+                                    src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80"
+                                    alt="Film Production"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gold-500 text-2xl">✓</span>
-                                <span>AI-Powered Matching</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gold-500 text-2xl">✓</span>
-                                <span>100% Free to Start</span>
-                            </div>
+                            <div className="absolute -bottom-6 -right-6 w-40 h-40 bg-gradient-to-br from-[#FF7A5A] to-[#FFC107] rounded-2xl opacity-20 blur-3xl"></div>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section className="py-20 container mx-auto px-4">
-                <div className="text-center mb-16 animate-slide-up">
-                    <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-                        Powerful Features for <span className="text-gradient">Film Professionals</span>
-                    </h2>
-                    <p className="text-xl text-gray-400">Everything you need to succeed in the film industry</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <FeatureCard
-                        icon="🎭"
-                        title="Dynamic Portfolios"
-                        description="Create stunning portfolios with media uploads, demo reels, and professional credentials that wow casting directors."
-                    />
-                    <FeatureCard
-                        icon="🤖"
-                        title="AI Smart Matching"
-                        description="Our AI analyzes your profile and skills to match you with the perfect casting calls and opportunities."
-                    />
-                    <FeatureCard
-                        icon="🔍"
-                        title="Advanced Discovery"
-                        description="Find talent or opportunities with intelligent filters, real-time search, and AI-powered recommendations."
-                    />
-                    <FeatureCard
-                        icon="🎬"
-                        title="Casting Dashboard"
-                        description="Post casting calls, review applications, and manage your projects all in one powerful dashboard."
-                    />
-                    <FeatureCard
-                        icon="🔒"
-                        title="Secure File Sharing"
-                        description="Share scripts and confidential files securely with token-based access and version control."
-                    />
-                    <FeatureCard
-                        icon="🔔"
-                        title="Smart Notifications"
-                        description="Never miss an opportunity with real-time alerts for job matches, profile views, and applications."
-                    />
-                </div>
-            </section>
-
-            {/* How It Works */}
-            <section className="py-20 bg-gradient-to-b from-transparent to-dark-900">
-                <div className="container mx-auto px-4">
+            <section className="py-20 px-6 bg-white">
+                <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-                            How <span className="text-gradient">CastUp</span> Works
+                        <h2 className="text-4xl text-[#3C3C3C] font-bold mb-4">
+                            Everything You Need to Succeed
                         </h2>
-                        <p className="text-xl text-gray-400">Get started in 3 simple steps</p>
+                        <p className="text-xl text-[#6B6B6B]">
+                            Powerful tools designed for filmmakers, by filmmakers
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        <StepCard
-                            number="1"
-                            title="Create Your Profile"
-                            description="Sign up and choose your department. Build a professional portfolio with your experience, skills, and demo reels."
-                        />
-                        <StepCard
-                            number="2"
-                            title="Get AI Recommendations"
-                            description="Our AI analyzes your profile and suggests improvements, hashtags, and matching opportunities instantly."
-                        />
-                        <StepCard
-                            number="3"
-                            title="Connect & Collaborate"
-                            description="Apply to casting calls, share files securely, and network with thousands of film professionals."
-                        />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {features.map((feature, index) => (
+                            <div
+                                key={index}
+                                className="p-8 bg-[#FFF8F0] rounded-2xl hover:shadow-xl transition-shadow duration-300"
+                            >
+                                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#FF7A5A] to-[#FFC107] flex items-center justify-center mb-4">
+                                    <feature.icon className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl text-[#3C3C3C] font-semibold mb-2">
+                                    {feature.title}
+                                </h3>
+                                <p className="text-[#6B6B6B]">
+                                    {feature.description}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 container mx-auto px-4">
-                <div className="glass-card p-12 md:p-16 text-center max-w-4xl mx-auto rounded-3xl relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-gold-500/10 to-primary-500/10" />
-                    <div className="relative z-10 space-y-6">
-                        <h2 className="text-3xl md:text-5xl font-display font-bold">
-                            Ready to Elevate Your Cinema Career?
+            <section className="py-20 px-6">
+                <div className="max-w-4xl mx-auto text-center">
+                    <div className="p-12 bg-gradient-to-br from-[#FF7A5A] to-[#FFC107] rounded-3xl shadow-2xl">
+                        <h2 className="text-4xl text-white font-bold mb-4">
+                            Ready to Connect?
                         </h2>
-                        <p className="text-xl text-gray-300">
-                            Join thousands of professionals already using CastUp to find opportunities and showcase their talent.
+                        <p className="text-xl text-white/90 mb-8">
+                            Join thousands of filmmakers building their careers on CastUp
                         </p>
-                        <div className="pt-4">
-                            <Link to="/signup" className="btn-primary text-lg px-10 py-4 inline-block">
-                                🎬 Start Your Journey - It's Free!
-                            </Link>
-                        </div>
+                        <Link to="/signup">
+                            <Button
+                                size="lg"
+                                variant="secondary"
+                                className="bg-white text-[#FF7A5A] hover:bg-gray-50 px-8 py-6 text-lg font-semibold"
+                            >
+                                Get Started Today
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>
-        </div>
-    )
-}
 
-function FeatureCard({ icon, title, description }) {
-    return (
-        <div className="glass-card-hover p-8 space-y-4 group">
-            <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                {icon}
-            </div>
-            <h3 className="text-2xl font-display font-bold text-white group-hover:text-gold-400 transition-colors">
-                {title}
-            </h3>
-            <p className="text-gray-400 leading-relaxed">
-                {description}
-            </p>
+            {/* Footer */}
+            <footer className="py-12 px-6 bg-white border-t border-gray-200">
+                <div className="max-w-7xl mx-auto text-center text-[#6B6B6B]">
+                    <p>&copy; 2025 CastUp. Where Cinema Connects.</p>
+                </div>
+            </footer>
         </div>
-    )
-}
-
-function StepCard({ number, title, description }) {
-    return (
-        <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-gold-500 to-gold-600 rounded-full flex items-center justify-center text-3xl font-bold text-dark-950 mx-auto shadow-2xl shadow-gold-500/50">
-                {number}
-            </div>
-            <h3 className="text-2xl font-display font-bold text-white">
-                {title}
-            </h3>
-            <p className="text-gray-400">
-                {description}
-            </p>
-        </div>
-    )
+    );
 }

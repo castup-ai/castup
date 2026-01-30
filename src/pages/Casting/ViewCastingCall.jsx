@@ -1,141 +1,134 @@
-import { useParams } from 'react-router-dom'
-import { useData } from '../../context/DataContext'
-import { useAuth } from '../../context/AuthContext'
-import { useState } from 'react'
-import Button from '../../components/Button'
-import Modal from '../../components/Modal'
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import DashboardLayout from '../../components/DashboardLayout';
+import TopHeader from '../../components/TopHeader';
+import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { MapPin, Calendar, Users } from 'lucide-react';
 
 export default function ViewCastingCall() {
-    const { id } = useParams()
-    const { user } = useAuth()
-    const { castingCalls, applyCastingCall } = useData()
-    const casting = castingCalls.find(c => c.id === parseInt(id))
-    const [showApplyModal, setShowApplyModal] = useState(false)
-    const [applicationMessage, setApplicationMessage] = useState('')
-    const [applying, setApplying] = useState(false)
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { castingCalls, applyCastingCall } = useData();
+    const { user } = useAuth();
+    const [call, setCall] = useState(null);
+    const [applying, setApplying] = useState(false);
 
-    if (!casting) {
-        return (
-            <div className="container mx-auto px-4 py-12">
-                <div className="glass-card p-12 text-center">
-                    <div className="text-6xl mb-4">❌</div>
-                    <h2 className="text-2xl font-bold mb-2">Casting Call Not Found</h2>
-                </div>
-            </div>
-        )
-    }
+    useEffect(() => {
+        const foundCall = castingCalls?.find(c => c.id === id);
+        setCall(foundCall);
+    }, [id, castingCalls]);
 
     const handleApply = () => {
-        setApplying(true)
+        setApplying(true);
         setTimeout(() => {
-            applyCastingCall(casting.id, user.id, applicationMessage)
-            setApplying(false)
-            setShowApplyModal(false)
-            setApplicationMessage('')
-        }, 1000)
+            applyCastingCall(id, user.id);
+            setApplying(false);
+            alert('Application submitted successfully!');
+        }, 1000);
+    };
+
+    if (!call) {
+        return (
+            <DashboardLayout>
+                <TopHeader title="Casting Call" />
+                <main className="flex-1 overflow-auto p-8">
+                    <Card>
+                        <CardContent className="p-12 text-center">
+                            <p className="text-[#6B6B6B]">Casting call not found</p>
+                        </CardContent>
+                    </Card>
+                </main>
+            </DashboardLayout>
+        );
     }
 
+    const isOpen = new Date(call.deadline) > new Date();
+    const hasApplied = call.applications?.includes(user?.id);
+
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="max-w-4xl mx-auto">
-                {/* Header */}
-                <div className="glass-card p-8 mb-8">
-                    <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                            <h1 className="text-4xl font-display font-bold mb-2">{casting.projectTitle}</h1>
-                            <p className="text-xl text-gold-400 mb-2">{casting.targetRole}</p>
-                            <p className="text-gray-400">Posted by {casting.creatorName || 'Unknown'}</p>
-                        </div>
-                        <span className={`badge ${casting.status === 'Open' ? 'badge-primary' : 'bg-gray-500/20'}`}>
-                            {casting.status}
-                        </span>
-                    </div>
-
-                    {casting.status === 'Open' && (
-                        <Button variant="primary" onClick={() => setShowApplyModal(true)} className="w-full md:w-auto">
-                            🎯 Apply Now
-                        </Button>
-                    )}
-                </div>
-
-                {/* Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="glass-card p-6">
-                            <h2 className="text-2xl font-display font-bold mb-4">Description</h2>
-                            <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                                {casting.description}
-                            </p>
-                        </div>
-
-                        {casting.requiredSkills && casting.requiredSkills.length > 0 && (
-                            <div className="glass-card p-6">
-                                <h2 className="text-2xl font-display font-bold mb-4">Required Skills</h2>
-                                <div className="flex flex-wrap gap-3">
-                                    {casting.requiredSkills.map((skill, index) => (
-                                        <span key={index} className="badge-primary px-4 py-2">
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="glass-card p-6">
-                            <h3 className="font-bold text-white mb-4">Details</h3>
-                            <div className="space-y-3">
-                                {casting.location && (
-                                    <div>
-                                        <p className="text-sm text-gray-400">Location</p>
-                                        <p className="text-white">📍 {casting.location}</p>
-                                    </div>
-                                )}
-                                {casting.compensation && (
-                                    <div>
-                                        <p className="text-sm text-gray-400">Compensation</p>
-                                        <p className="text-white">💰 {casting.compensation}</p>
-                                    </div>
-                                )}
-                                {casting.deadline && (
-                                    <div>
-                                        <p className="text-sm text-gray-400">Deadline</p>
-                                        <p className="text-white">📅 {new Date(casting.deadline).toLocaleDateString()}</p>
-                                    </div>
-                                )}
+        <DashboardLayout>
+            <TopHeader title="Casting Call Details" />
+            <main className="flex-1 overflow-auto p-8">
+                <div className="max-w-4xl mx-auto space-y-6">
+                    {/* Header */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="text-sm text-gray-400">Applications</p>
-                                    <p className="text-white">👥 {casting.applications?.length || 0}</p>
+                                    <Badge variant={isOpen ? 'default' : 'secondary'} className="mb-3">
+                                        {isOpen ? 'Open for Applications' : 'Closed'}
+                                    </Badge>
+                                    <CardTitle className="text-3xl">{call.title}</CardTitle>
+                                    <p className="text-lg text-[#6B6B6B] mt-2">{call.project}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-6 text-sm text-[#6B6B6B]">
+                                {call.location && (
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4" />
+                                        <span>{call.location}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>Deadline: {new Date(call.deadline).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4" />
+                                    <span>{call.applications?.length || 0} Applications</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-            {/* Apply Modal */}
-            <Modal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} title="Apply for this Role">
-                <div className="space-y-4">
-                    <p className="text-gray-300">
-                        Tell the casting director why you're perfect for this role in <strong>{casting.projectTitle}</strong>.
-                    </p>
-                    <textarea
-                        className="input-field min-h-[150px]"
-                        value={applicationMessage}
-                        onChange={(e) => setApplicationMessage(e.target.value)}
-                        placeholder="Introduce yourself and explain why you're a great fit..."
-                    />
-                    <div className="flex gap-4">
-                        <Button variant="secondary" onClick={() => setShowApplyModal(false)} className="flex-1">
-                            Cancel
-                        </Button>
-                        <Button variant="primary" onClick={handleApply} loading={applying} className="flex-1">
-                            Submit Application
-                        </Button>
-                    </div>
+                    {/* Description */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-xl">Description</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-[#6B6B6B] whitespace-pre-wrap">{call.description}</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Requirements */}
+                    {call.requirements && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xl">Requirements</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-[#6B6B6B] whitespace-pre-wrap">{call.requirements}</p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Actions */}
+                    <Card>
+                        <CardContent className="p-6">
+                            {hasApplied ? (
+                                <div className="text-center py-4">
+                                    <p className="text-green-600 font-semibold">✓ You have already applied to this casting call</p>
+                                </div>
+                            ) : isOpen ? (
+                                <Button onClick={handleApply} disabled={applying} className="w-full" size="lg">
+                                    {applying ? 'Submitting Application...' : 'Apply Now'}
+                                </Button>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <p className="text-red-600 font-semibold">This casting call is closed</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
-            </Modal>
-        </div>
-    )
+            </main>
+        </DashboardLayout>
+    );
 }
