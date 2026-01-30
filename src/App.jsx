@@ -20,10 +20,6 @@ import ScriptLocker from './pages/Files/ScriptLocker'
 import SharedFiles from './pages/Files/SharedFiles'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
 
-// Components
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
-
 // Protected Route Component
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem('token')
