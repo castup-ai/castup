@@ -6,7 +6,7 @@ import { useData } from '../../context/DataContext';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { MapPin, Mail, Phone, Globe } from 'lucide-react';
+import { MapPin, Mail, Phone, Globe, Youtube, Instagram, Linkedin, Image, Video } from 'lucide-react';
 
 export default function ViewPortfolio() {
     const { id } = useParams();
@@ -14,7 +14,8 @@ export default function ViewPortfolio() {
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
-        const foundProfile = profiles.find(p => p.id === id);
+        // Handle both string and number IDs
+        const foundProfile = profiles.find(p => p.id == id || p.id === parseInt(id));
         setProfile(foundProfile);
     }, [id, profiles]);
 
@@ -116,8 +117,116 @@ export default function ViewPortfolio() {
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* Social Links */}
+                    {(profile.youtubeUrl || profile.imdbUrl || profile.instagramUrl || profile.linkedinUrl || profile.website) && (
+                        <Card>
+                            <CardContent className="p-6">
+                                <h2 className="text-xl font-bold text-[#3C3C3C] mb-4">Links</h2>
+                                <div className="flex flex-wrap gap-3">
+                                    {profile.youtubeUrl && (
+                                        <a href={profile.youtubeUrl} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" className="gap-2">
+                                                <Youtube className="w-4 h-4 text-red-600" />
+                                                YouTube
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {profile.imdbUrl && (
+                                        <a href={profile.imdbUrl} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" className="gap-2">
+                                                <Globe className="w-4 h-4 text-yellow-600" />
+                                                IMDb
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {profile.instagramUrl && (
+                                        <a href={profile.instagramUrl} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" className="gap-2">
+                                                <Instagram className="w-4 h-4 text-pink-600" />
+                                                Instagram
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {profile.linkedinUrl && (
+                                        <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" className="gap-2">
+                                                <Linkedin className="w-4 h-4 text-blue-600" />
+                                                LinkedIn
+                                            </Button>
+                                        </a>
+                                    )}
+                                    {profile.website && (
+                                        <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" className="gap-2">
+                                                <Globe className="w-4 h-4" />
+                                                Website
+                                            </Button>
+                                        </a>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Photos */}
+                    {profile.photos && profile.photos.length > 0 && (
+                        <Card>
+                            <CardContent className="p-6">
+                                <h2 className="text-xl font-bold text-[#3C3C3C] mb-4 flex items-center gap-2">
+                                    <Image className="w-5 h-5" />
+                                    Photos
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {profile.photos.map((photo, index) => (
+                                        <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                                            <img
+                                                src={photo.url || photo}
+                                                alt={`Photo ${index + 1}`}
+                                                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Videos */}
+                    {profile.videos && profile.videos.length > 0 && (
+                        <Card>
+                            <CardContent className="p-6">
+                                <h2 className="text-xl font-bold text-[#3C3C3C] mb-4 flex items-center gap-2">
+                                    <Video className="w-5 h-5" />
+                                    Videos
+                                </h2>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {profile.videos.map((video, index) => (
+                                        <div key={index} className="space-y-2">
+                                            <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
+                                                {video.url && (
+                                                    <iframe
+                                                        src={video.url}
+                                                        className="w-full h-full"
+                                                        allowFullScreen
+                                                        title={video.title || `Video ${index + 1}`}
+                                                    />
+                                                )}
+                                            </div>
+                                            {video.title && (
+                                                <p className="font-medium text-[#3C3C3C]">{video.title}</p>
+                                            )}
+                                            {video.description && (
+                                                <p className="text-sm text-[#6B6B6B]">{video.description}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </main>
-        </DashboardLayout>
+        </DashboardLayout >
     );
 }
