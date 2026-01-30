@@ -84,7 +84,18 @@ export default function EditPortfolio() {
         <DashboardLayout>
             <TopHeader title="Edit Portfolio" />
             <main className="flex-1 overflow-auto p-8">
-                <div className="max-w-6xl mx-auto">
+                {/* Back Button */}
+                <div className="max-w-6xl mx-auto mb-4">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate(-1)}
+                        className="text-[#6B6B6B] hover:text-[#3C3C3C]"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                    </Button>
+                </div>
+                <div className="max-w-6xl mx-auto">\
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Form */}
                         <div className="lg:col-span-2">
