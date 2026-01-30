@@ -79,11 +79,11 @@ export default function ViewPortfolio() {
                 <div className="max-w-5xl mx-auto mb-4">
                     <Button
                         variant="ghost"
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/dashboard')}
                         className="text-[#6B6B6B] hover:text-[#3C3C3C]"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back
+                        Back to Dashboard
                     </Button>
                 </div>
                 <div className="max-w-5xl mx-auto space-y-6">

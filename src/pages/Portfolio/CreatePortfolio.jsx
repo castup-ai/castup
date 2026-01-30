@@ -73,11 +73,11 @@ export default function CreatePortfolio() {
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/dashboard')}
                     className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
-                    Back
+                    Back to Dashboard
                 </button>
 
                 {/* Header */}
