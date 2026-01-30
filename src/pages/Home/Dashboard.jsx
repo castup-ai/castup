@@ -1,6 +1,7 @@
 import DashboardLayout from '../../components/DashboardLayout';
 import TopHeader from '../../components/TopHeader';
 import { useAuth } from '../../context/AuthContext';
+import { useData } from '../../context/DataContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -8,6 +9,17 @@ import { Users, Sparkles, Film, FolderLock } from 'lucide-react';
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const { profiles, castingCalls } = useData();
+
+    // Get user's actual profile data
+    const userProfile = profiles?.find(p => p.userId === user?.id);
+
+    // Calculate real stats
+    const profileViews = userProfile?.views || 0;
+    const connections = userProfile?.connections?.length || 0;
+    const applicationsSent = castingCalls?.filter(call =>
+        call.applications?.includes(user?.id)
+    ).length || 0;
 
     const quickActions = [
         {
@@ -83,19 +95,19 @@ export default function Dashboard() {
                             <Card>
                                 <CardHeader>
                                     <CardDescription>Profile Views</CardDescription>
-                                    <CardTitle className="text-3xl">124</CardTitle>
+                                    <CardTitle className="text-3xl">{profileViews}</CardTitle>
                                 </CardHeader>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <CardDescription>Connections</CardDescription>
-                                    <CardTitle className="text-3xl">45</CardTitle>
+                                    <CardTitle className="text-3xl">{connections}</CardTitle>
                                 </CardHeader>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <CardDescription>Applications Sent</CardDescription>
-                                    <CardTitle className="text-3xl">8</CardTitle>
+                                    <CardTitle className="text-3xl">{applicationsSent}</CardTitle>
                                 </CardHeader>
                             </Card>
                         </div>
