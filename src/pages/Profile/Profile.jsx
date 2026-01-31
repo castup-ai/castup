@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import TopHeader from '../../components/TopHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { useAI } from '../../context/AIContext';
+import { userAPI, portfolioAPI } from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -12,18 +14,19 @@ import { Badge } from '../../components/ui/badge';
 import {
     ArrowLeft, Camera, X, User, Mail, MapPin, Users,
     Youtube, Instagram, Linkedin, Globe, Image as ImageIcon,
-    Video as VideoIcon, Edit2, Plus, Trash2, Eye, Film
+    Video as VideoIcon, Edit2, Plus, Trash2, Eye, Film, Star
 } from 'lucide-react';
 
 export default function Profile() {
     const { user, updateUser } = useAuth();
-    const { profiles } = useData();
+    const { profiles, castingCalls, applyCastingCall } = useData();
+    const { analyzeProfile, recommendOpportunities, generateSummary } = useAI();
     const navigate = useNavigate();
 
     const userProfile = profiles.find(p => p.id === user?.id || p.userId === user?.id);
 
     const [activeTab, setActiveTab] = useState('about');
-    const [profilePhoto, setProfilePhoto] = useState(user?.profilePicture || userProfile?.profilePicture || '');
+    const [profilePhoto, setProfilePhoto] = useState(user?.profilePicture || userProfile?.profile_picture || '');
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -33,16 +36,64 @@ export default function Profile() {
         bio: userProfile?.bio || '',
     });
     const [socialLinks, setSocialLinks] = useState({
-        youtubeUrl: userProfile?.youtubeUrl || '',
-        instagramUrl: userProfile?.instagramUrl || '',
-        linkedinUrl: userProfile?.linkedinUrl || '',
-        imdbUrl: userProfile?.imdbUrl || '',
-        website: userProfile?.website || '',
+        youtubeUrl: '',
+        instagramUrl: '',
+        linkedinUrl: '',
+        imdbUrl: '',
+        website: '',
     });
     const [portfolioWorks, setPortfolioWorks] = useState({
-        photos: userProfile?.photos || [],
-        videos: userProfile?.videos || [],
+        photos: [],
+        videos: [],
     });
+    const [skills, setSkills] = useState([]);
+    const [experience, setExperience] = useState([]);
+    const [aiSuggestions, setAiSuggestions] = useState(null);
+    const [aiPitch, setAiPitch] = useState('');
+    const [matches, setMatches] = useState([]);
+    const [newSkill, setNewSkill] = useState('');
+
+    useEffect(() => {
+        const fetchFullPortfolio = async () => {
+            try {
+                const response = await portfolioAPI.getMyPortfolio();
+                if (response.data.success && response.data.portfolio) {
+                    const p = response.data.portfolio;
+
+                    // Parse media and external links if they are strings
+                    const media = typeof p.media === 'string' ? JSON.parse(p.media) : (p.media || {});
+                    const externalLinks = typeof p.external_links === 'string' ? JSON.parse(p.external_links) : (p.external_links || {});
+
+                    setFormData(prev => ({
+                        ...prev,
+                        bio: p.bio || prev.bio
+                    }));
+
+                    setSocialLinks({
+                        youtubeUrl: externalLinks.youtubeUrl || '',
+                        instagramUrl: externalLinks.instagramUrl || '',
+                        linkedinUrl: externalLinks.linkedinUrl || '',
+                        imdbUrl: externalLinks.imdbUrl || '',
+                        website: externalLinks.website || '',
+                    });
+
+                    setPortfolioWorks({
+                        photos: media.photos || [],
+                        videos: media.videos || [],
+                    });
+
+                    setSkills(p.skills || []);
+                    setExperience(Array.isArray(p.experience) ? p.experience : (typeof p.experience === 'string' ? JSON.parse(p.experience) : []));
+                }
+            } catch (error) {
+                console.error('Error fetching full portfolio:', error);
+            }
+        };
+
+        if (user) {
+            fetchFullPortfolio();
+        }
+    }, [user]);
 
     const [isEditingBasic, setIsEditingBasic] = useState(false);
     const [isEditingSocial, setIsEditingSocial] = useState(false);
@@ -58,7 +109,13 @@ export default function Profile() {
 
                 setIsSaving(true);
                 try {
-                    await updateUser({
+                    // Persist to backend
+                    await userAPI.updateProfile({
+                        profilePicture: photoData,
+                    });
+
+                    // Update local context
+                    updateUser({
                         profilePicture: photoData,
                     });
                     alert('Profile photo saved successfully!');
@@ -78,8 +135,13 @@ export default function Profile() {
 
         setIsSaving(true);
         try {
+            // Persist to backend
+            await userAPI.updateProfile({
+                profilePicture: '',
+            });
+
             setProfilePhoto('');
-            await updateUser({
+            updateUser({
                 profilePicture: '',
             });
             alert('Profile photo removed successfully!');
@@ -94,7 +156,24 @@ export default function Profile() {
     const handleSaveBasicInfo = async () => {
         setIsSaving(true);
         try {
-            await updateUser({
+            // 1. Update basic user info in users table
+            await userAPI.updateProfile({
+                name: formData.name,
+                department: formData.department,
+                profilePicture: profilePhoto,
+            });
+
+            // 2. Update bio in portfolios table
+            await portfolioAPI.createOrUpdate({
+                bio: formData.bio,
+                experience: experience,
+                skills: skills,
+                media: portfolioWorks,
+                externalLinks: socialLinks
+            });
+
+            // 3. Update local context
+            updateUser({
                 ...formData,
                 profilePicture: profilePhoto,
             });
@@ -109,10 +188,86 @@ export default function Profile() {
         }
     };
 
+    const handleAnalyzeProfile = () => {
+        const analysis = analyzeProfile({
+            ...formData,
+            skills,
+            experience,
+            profileImage: profilePhoto,
+        });
+        setAiSuggestions(analysis);
+
+        // Generate AI Pitch
+        if (formData.bio) {
+            setAiPitch(generateSummary(formData.bio));
+        }
+
+        // Generate Matches
+        const recs = recommendOpportunities({
+            role: formData.department,
+            skills: skills,
+            experience: experience,
+        }, castingCalls);
+        setMatches(recs);
+    };
+
+    const handleAddSkill = () => {
+        if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+            setSkills([...skills, newSkill.trim()]);
+            setNewSkill('');
+        }
+    };
+
+    const handleRemoveSkill = (skillToRemove) => {
+        setSkills(skills.filter(s => s !== skillToRemove));
+    };
+
+    const handleAddExperience = () => {
+        const newExp = { id: Date.now(), title: '', role: '', year: '' };
+        setExperience([...experience, newExp]);
+    };
+
+    const handleUpdateExperience = (id, field, value) => {
+        setExperience(experience.map(exp => exp.id === id ? { ...exp, [field]: value } : exp));
+    };
+
+    const handleRemoveExperience = (id) => {
+        setExperience(experience.filter(exp => exp.id !== id));
+    };
+
+    const handleSaveProfessionalDetails = async () => {
+        setIsSaving(true);
+        try {
+            await portfolioAPI.createOrUpdate({
+                bio: formData.bio,
+                experience: experience,
+                skills: skills,
+                media: portfolioWorks,
+                externalLinks: socialLinks
+            });
+            alert('Professional details saved successfully!');
+        } catch (error) {
+            console.error('Error saving professional details:', error);
+            alert('Failed to save details.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleSaveSocialLinks = async () => {
         setIsSaving(true);
         try {
-            await updateUser({
+            // Update social links in portfolios table
+            await portfolioAPI.createOrUpdate({
+                bio: formData.bio,
+                experience: experience,
+                skills: skills,
+                media: portfolioWorks,
+                externalLinks: socialLinks
+            });
+
+            // Update local context
+            updateUser({
                 ...socialLinks,
             });
 
@@ -139,27 +294,43 @@ export default function Profile() {
                     uploadedAt: new Date().toISOString(),
                 };
 
-                if (type === 'photo') {
-                    setPortfolioWorks(prev => ({
-                        ...prev,
-                        photos: [...prev.photos, newWork]
-                    }));
-                } else {
-                    setPortfolioWorks(prev => ({
-                        ...prev,
-                        videos: [...prev.videos, newWork]
-                    }));
-                }
-
-                // Auto-save to user profile
+                // Persist to backend via portfolios API
                 try {
-                    const updatedWorks = type === 'photo'
-                        ? { photos: [...portfolioWorks.photos, newWork] }
-                        : { videos: [...portfolioWorks.videos, newWork] };
+                    const currentPhotos = portfolioWorks.photos || [];
+                    const currentVideos = portfolioWorks.videos || [];
 
-                    await updateUser(updatedWorks);
+                    const updatedPhotos = type === 'photo' ? [...currentPhotos, newWork] : currentPhotos;
+                    const updatedVideos = type === 'video' ? [...currentVideos, newWork] : currentVideos;
+
+                    await portfolioAPI.createOrUpdate({
+                        bio: formData.bio,
+                        media: { photos: updatedPhotos, videos: updatedVideos },
+                        externalLinks: socialLinks,
+                        experience: userProfile?.experience || [],
+                        skills: userProfile?.skills || []
+                    });
+
+                    // Update local state after successful API call
+                    if (type === 'photo') {
+                        setPortfolioWorks(prev => ({
+                            ...prev,
+                            photos: updatedPhotos
+                        }));
+                    } else {
+                        setPortfolioWorks(prev => ({
+                            ...prev,
+                            videos: updatedVideos
+                        }));
+                    }
+
+                    // Update local user context if needed (to keep sync)
+                    updateUser({
+                        photos: updatedPhotos,
+                        videos: updatedVideos
+                    });
                 } catch (error) {
                     console.error('Error saving work:', error);
+                    alert('Failed to save work to server.');
                 }
             };
             reader.readAsDataURL(file);
@@ -169,19 +340,37 @@ export default function Profile() {
     const handleDeleteWork = async (type, index) => {
         if (!confirm('Are you sure you want to delete this work?')) return;
 
-        const updatedWorks = type === 'photo'
-            ? portfolioWorks.photos.filter((_, i) => i !== index)
-            : portfolioWorks.videos.filter((_, i) => i !== index);
-
-        if (type === 'photo') {
-            setPortfolioWorks(prev => ({ ...prev, photos: updatedWorks }));
-        } else {
-            setPortfolioWorks(prev => ({ ...prev, videos: updatedWorks }));
-        }
-
-        // Save to user profile
         try {
-            await updateUser(type === 'photo' ? { photos: updatedWorks } : { videos: updatedWorks });
+            const updatedPhotos = type === 'photo'
+                ? portfolioWorks.photos.filter((_, i) => i !== index)
+                : (portfolioWorks.photos || []);
+
+            const updatedVideos = type === 'video'
+                ? portfolioWorks.videos.filter((_, i) => i !== index)
+                : (portfolioWorks.videos || []);
+
+            // Persist to backend
+            await portfolioAPI.createOrUpdate({
+                bio: formData.bio,
+                media: { photos: updatedPhotos, videos: updatedVideos },
+                externalLinks: socialLinks,
+                experience: userProfile?.experience || [],
+                skills: userProfile?.skills || []
+            });
+
+            // Update local state
+            if (type === 'photo') {
+                setPortfolioWorks(prev => ({ ...prev, photos: updatedPhotos }));
+            } else {
+                setPortfolioWorks(prev => ({ ...prev, videos: updatedVideos }));
+            }
+
+            // Keep local context in sync
+            updateUser({
+                photos: updatedPhotos,
+                videos: updatedVideos
+            });
+
             alert('Work deleted successfully!');
         } catch (error) {
             console.error('Error deleting work:', error);
@@ -288,8 +477,8 @@ export default function Profile() {
                             <button
                                 onClick={() => setActiveTab('about')}
                                 className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'about'
-                                        ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
-                                        : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
+                                    ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
+                                    : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
                                     }`}
                             >
                                 About
@@ -297,8 +486,8 @@ export default function Profile() {
                             <button
                                 onClick={() => setActiveTab('works')}
                                 className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'works'
-                                        ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
-                                        : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
+                                    ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
+                                    : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
                                     }`}
                             >
                                 Works
@@ -306,11 +495,23 @@ export default function Profile() {
                             <button
                                 onClick={() => setActiveTab('connections')}
                                 className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'connections'
-                                        ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
-                                        : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
+                                    ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
+                                    : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
                                     }`}
                             >
                                 Connections
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('matches')}
+                                className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'matches'
+                                    ? 'text-[#FF7A5A] border-b-2 border-[#FF7A5A]'
+                                    : 'text-[#6B6B6B] hover:text-[#3C3C3C]'
+                                    }`}
+                            >
+                                <span className="flex items-center justify-center gap-1">
+                                    Matches
+                                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">AI</Badge>
+                                </span>
                             </button>
                         </div>
 
@@ -395,10 +596,177 @@ export default function Profile() {
                                                     <Input
                                                         id="department"
                                                         value={formData.department}
-                                                        disabled
-                                                        className="bg-gray-50"
+                                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                        disabled={!isEditingBasic}
+                                                        placeholder="Actor, Director, etc."
                                                     />
-                                                    <p className="text-xs text-[#6B6B6B]">Department cannot be changed</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* AI Suggestions & Completeness */}
+                                    <Card className="border-[#FF7A5A]/20 bg-gradient-to-br from-white to-[#FFF8F0]">
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <div className="p-2 bg-[#FF7A5A] rounded-lg text-white">
+                                                        <Film className="w-5 h-5" />
+                                                    </div>
+                                                    AI Profile Analysis
+                                                </CardTitle>
+                                                <Button onClick={handleAnalyzeProfile} variant="outline" size="sm" className="border-[#FF7A5A] text-[#FF7A5A] hover:bg-[#FF7A5A] hover:text-white">
+                                                    🤖 Get AI Suggestions
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {aiSuggestions ? (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="font-medium text-[#6B6B6B]">Profile Completeness</span>
+                                                            <span className="font-bold text-[#FF7A5A]">{aiSuggestions.completeness}%</span>
+                                                        </div>
+                                                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-[#FF7A5A] to-[#FFC107] transition-all duration-500"
+                                                                style={{ width: `${aiSuggestions.completeness}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {aiSuggestions.suggestions.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm font-medium text-[#3C3C3C]">Suggestions to improve:</p>
+                                                            <ul className="space-y-1">
+                                                                {aiSuggestions.suggestions.map((s, i) => (
+                                                                    <li key={i} className="text-sm text-[#6B6B6B] flex items-center gap-2">
+                                                                        <span className={`w-1.5 h-1.5 rounded-full ${s.priority === 'high' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                                                                        {s.message}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
+                                                    {aiSuggestions.hashtags.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm font-medium text-[#3C3C3C]">Suggested Hashtags:</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {aiSuggestions.hashtags.map((tag, i) => (
+                                                                    <Badge key={i} variant="secondary" className="bg-white">{tag}</Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {aiPitch && (
+                                                        <div className="mt-4 p-4 bg-[#FF7A5A]/5 rounded-lg border border-[#FF7A5A]/10">
+                                                            <p className="text-xs font-bold text-[#FF7A5A] uppercase tracking-wider mb-2 flex items-center gap-1">
+                                                                <Star className="w-3 h-3" />
+                                                                Pro AI Tip: Your Elevator Pitch
+                                                            </p>
+                                                            <p className="text-sm text-[#3C3C3C] italic leading-relaxed">
+                                                                "{aiPitch}"
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="text-center py-4">
+                                                    <p className="text-sm text-[#6B6B6B]">Click the button above to analyze your profile and get personalized AI suggestions!</p>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Skills & Experience */}
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between">
+                                            <CardTitle>Professional Details</CardTitle>
+                                            <Button onClick={handleSaveProfessionalDetails} disabled={isSaving} size="sm">
+                                                {isSaving ? 'Saving...' : 'Save Changes'}
+                                            </Button>
+                                        </CardHeader>
+                                        <CardContent className="space-y-8">
+                                            {/* Skills Section */}
+                                            <div className="space-y-4">
+                                                <Label className="text-lg font-bold">Skills</Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        placeholder="Add a skill (e.g. Method Acting)"
+                                                        value={newSkill}
+                                                        onChange={(e) => setNewSkill(e.target.value)}
+                                                        onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+                                                    />
+                                                    <Button onClick={handleAddSkill} type="button" variant="outline">
+                                                        <Plus className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {skills.map((skill, i) => (
+                                                        <Badge key={i} className="pl-3 pr-1 py-1 flex items-center gap-1">
+                                                            {skill}
+                                                            <button onClick={() => handleRemoveSkill(skill)} className="p-0.5 hover:bg-black/10 rounded-full transition-colors">
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Experience Section */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-lg font-bold">Experience</Label>
+                                                    <Button onClick={handleAddExperience} variant="outline" size="sm">
+                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        Add Entry
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {experience.map((exp, i) => (
+                                                        <div key={exp.id || i} className="p-4 rounded-lg border border-gray-100 bg-gray-50/50 space-y-4 relative group">
+                                                            <button
+                                                                onClick={() => handleRemoveExperience(exp.id)}
+                                                                className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Project/Company</Label>
+                                                                    <Input
+                                                                        value={exp.title || ''}
+                                                                        onChange={(e) => handleUpdateExperience(exp.id, 'title', e.target.value)}
+                                                                        placeholder="e.g. Movie Name or Studio"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Role</Label>
+                                                                    <Input
+                                                                        value={exp.role || ''}
+                                                                        onChange={(e) => handleUpdateExperience(exp.id, 'role', e.target.value)}
+                                                                        placeholder="e.g. Lead Actor"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2 md:col-span-2">
+                                                                    <Label className="text-xs">Year/Duration</Label>
+                                                                    <Input
+                                                                        value={exp.year || ''}
+                                                                        onChange={(e) => handleUpdateExperience(exp.id, 'year', e.target.value)}
+                                                                        placeholder="e.g. 2023 - Present"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {experience.length === 0 && (
+                                                        <p className="text-sm text-[#6B6B6B] text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                            No experience entries added yet.
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -637,46 +1005,30 @@ export default function Profile() {
                             {activeTab === 'connections' && (
                                 <div>
                                     {connections.length > 0 ? (
-                                        <div className="grid gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                             {connections.map((connectionId, index) => {
                                                 const connectedProfile = profiles.find(p => p.id === connectionId);
                                                 if (!connectedProfile) return null;
 
                                                 return (
-                                                    <div
-                                                        key={index}
-                                                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-[#FFF8F0] transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FF7A5A]/20 to-[#FFC107]/20 flex items-center justify-center overflow-hidden">
+                                                    <Card key={index} className="group hover:shadow-md transition-shadow">
+                                                        <CardContent className="p-6 text-center">
+                                                            <div className="w-20 h-20 rounded-full bg-gray-100 mx-auto mb-4 overflow-hidden ring-2 ring-[#FF7A5A]/20">
                                                                 {connectedProfile.profilePicture ? (
-                                                                    <img
-                                                                        src={connectedProfile.profilePicture}
-                                                                        alt={connectedProfile.name}
-                                                                        className="w-full h-full object-cover"
-                                                                    />
+                                                                    <img src={connectedProfile.profilePicture} alt={connectedProfile.name} className="w-full h-full object-cover" />
                                                                 ) : (
-                                                                    <User className="w-8 h-8 text-[#6B6B6B]" />
+                                                                    <div className="w-full h-full flex items-center justify-center text-2xl bg-[#FF7A5A]/10 text-[#FF7A5A]">
+                                                                        {connectedProfile.name?.charAt(0)}
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                            <div>
-                                                                <h4 className="font-semibold text-[#3C3C3C]">{connectedProfile.name}</h4>
-                                                                <p className="text-sm text-[#6B6B6B]">{connectedProfile.role || connectedProfile.department}</p>
-                                                                {connectedProfile.location && (
-                                                                    <p className="text-xs text-[#6B6B6B] flex items-center gap-1 mt-1">
-                                                                        <MapPin className="w-3 h-3" />
-                                                                        {connectedProfile.location}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={() => navigate(`/portfolio/${connectionId}`)}
-                                                        >
-                                                            View Profile
-                                                        </Button>
-                                                    </div>
+                                                            <h4 className="font-bold text-[#3C3C3C] mb-1">{connectedProfile.name}</h4>
+                                                            <p className="text-xs text-[#6B6B6B] mb-4">{connectedProfile.department || connectedProfile.role}</p>
+                                                            <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/portfolio/${connectionId}`)}>
+                                                                View Profile
+                                                            </Button>
+                                                        </CardContent>
+                                                    </Card>
                                                 );
                                             })}
                                         </div>
@@ -684,10 +1036,74 @@ export default function Profile() {
                                         <div className="text-center py-16">
                                             <Users className="w-16 h-16 mx-auto mb-4 text-[#6B6B6B] opacity-30" />
                                             <h3 className="text-lg font-semibold text-[#3C3C3C] mb-2">No connections yet</h3>
-                                            <p className="text-[#6B6B6B] mb-6">Start connecting with other professionals!</p>
-                                            <Button onClick={() => navigate('/explore')}>
-                                                Explore People
-                                            </Button>
+                                            <p className="text-[#6B6B6B] mb-6">Start exploring talent to build your network</p>
+                                            <Button onClick={() => navigate('/explore')}>Explore People</Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Matches Tab */}
+                            {activeTab === 'matches' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-xl font-bold text-[#3C3C3C] flex items-center gap-2">
+                                            <Film className="w-6 h-6 text-[#FF7A5A]" />
+                                            Recommended for You
+                                        </h3>
+                                        <Button onClick={handleAnalyzeProfile} variant="ghost" size="sm" className="text-[#FF7A5A]">
+                                            Refresh AI Recommendations
+                                        </Button>
+                                    </div>
+
+                                    {matches.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {matches.map((match, index) => (
+                                                <Card key={index} className="overflow-hidden hover:border-[#FF7A5A]/50 transition-colors">
+                                                    <CardContent className="p-6">
+                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                            <div className="flex-1 space-y-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <h4 className="text-xl font-bold text-[#3C3C3C]">{match.title || match.projectTitle}</h4>
+                                                                    <Badge variant="secondary" className="bg-[#FF7A5A] text-white border-0">
+                                                                        {match.matchScore}% Match
+                                                                    </Badge>
+                                                                </div>
+                                                                <p className="text-[#6B6B6B] font-medium">{match.targetRole || match.role}</p>
+                                                                <div className="flex flex-wrap gap-4 text-sm text-[#6B6B6B]">
+                                                                    <span className="flex items-center gap-1">
+                                                                        <MapPin className="w-4 h-4" />
+                                                                        {match.location || 'Remote'}
+                                                                    </span>
+                                                                    <span className="flex items-center gap-1 text-[#FF7A5A]">
+                                                                        <Plus className="w-4 h-4" />
+                                                                        {match.reason}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex gap-2 shrink-0">
+                                                                <Button variant="outline" onClick={() => navigate(`/casting/${match.id}`)}>
+                                                                    View Details
+                                                                </Button>
+                                                                <Button onClick={() => applyCastingCall(match.id, user.id, "Interested in this role based on AI recommendation.")}>
+                                                                    Quick Apply
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200">
+                                            <div className="w-20 h-20 bg-[#FF7A5A]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Film className="w-10 h-10 text-[#FF7A5A]" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-[#3C3C3C] mb-2">No active matches found</h3>
+                                            <p className="text-[#6B6B6B] max-w-md mx-auto mb-6">
+                                                We couldn't find any open casting calls that match your profile right now. Try updating your skills or bio to get better recommendations!
+                                            </p>
+                                            <Button onClick={() => navigate('/casting')}>Browse All Opportunities</Button>
                                         </div>
                                     )}
                                 </div>
