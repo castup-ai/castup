@@ -30,7 +30,6 @@ export default function Sidebar() {
     const navItems = [
         { path: '/dashboard', icon: Home, label: 'Home' },
         { path: '/explore', icon: Users, label: 'Explore' },
-        { path: '/portfolio/edit', icon: Briefcase, label: 'Edit Portfolio' },
         { path: '/casting', icon: Film, label: 'Casting Calls' },
         { path: '/files', icon: FolderLock, label: 'Script Locker' },
     ];
