@@ -30,19 +30,48 @@ export default function Profile() {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const handlePhotoUpload = (e) => {
+    const handlePhotoUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfilePhoto(reader.result);
+            reader.onloadend = async () => {
+                const photoData = reader.result;
+                setProfilePhoto(photoData);
+
+                // Auto-save photo immediately
+                setIsSaving(true);
+                try {
+                    await updateUser({
+                        profilePicture: photoData,
+                    });
+                    alert('Profile photo saved successfully!');
+                } catch (error) {
+                    console.error('Error saving photo:', error);
+                    alert('Failed to save photo. Please try again.');
+                } finally {
+                    setIsSaving(false);
+                }
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleRemovePhoto = () => {
-        setProfilePhoto('');
+    const handleRemovePhoto = async () => {
+        if (!confirm('Are you sure you want to remove your profile photo?')) return;
+
+        setIsSaving(true);
+        try {
+            setProfilePhoto('');
+            await updateUser({
+                profilePicture: '',
+            });
+            alert('Profile photo removed successfully!');
+        } catch (error) {
+            console.error('Error removing photo:', error);
+            alert('Failed to remove photo. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSavePhoto = async () => {
@@ -150,21 +179,14 @@ export default function Profile() {
                                                 className="hidden"
                                             />
                                         </label>
-                                        {profilePhoto && profilePhoto !== (user?.profilePicture || userProfile?.profilePicture) && (
-                                            <Button
-                                                onClick={handleSavePhoto}
-                                                disabled={isSaving}
-                                            >
-                                                {isSaving ? 'Saving...' : 'Save Photo'}
-                                            </Button>
-                                        )}
                                         {profilePhoto && (
                                             <Button
                                                 variant="outline"
                                                 onClick={handleRemovePhoto}
                                                 className="text-red-500 hover:text-red-600"
+                                                disabled={isSaving}
                                             >
-                                                Remove
+                                                {isSaving ? 'Removing...' : 'Remove'}
                                             </Button>
                                         )}
                                     </div>
