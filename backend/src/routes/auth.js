@@ -1,7 +1,7 @@
 import express from 'express';
 import passport from '../config/passport.js';
 import { generateToken } from '../utils/jwt.js';
-import { signup, login, getCurrentUser } from '../controllers/authController.js';
+import { signup, login, getCurrentUser, forgotPassword, resetPassword } from '../controllers/authController.js';
 import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
@@ -10,6 +10,10 @@ const router = express.Router();
 router.post('/signup', signup);
 router.post('/login', login);
 router.get('/me', authMiddleware, getCurrentUser);
+
+// Password reset routes
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Google OAuth routes
 router.get('/google',

@@ -20,6 +20,12 @@ import ScriptLocker from './pages/Files/ScriptLocker'
 import SharedFiles from './pages/Files/SharedFiles'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
 import Profile from './pages/Profile/Profile';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
+import AICastingDirector from './pages/AI/AICastingDirector';
+import AIAssistant from './pages/AI/AIAssistant';
+import AILocationScout from './pages/AI/AILocationScout';
+import ProfileExplanatory from './pages/AI/ProfileExplanatory';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -39,6 +45,8 @@ function App() {
                             <Route path="/login" element={<Login />} />
                             <Route path="/signup" element={<Signup />} />
                             <Route path="/auth/callback" element={<AuthCallback />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
                             {/* Protected Routes */}
                             <Route path="/dashboard" element={
@@ -76,6 +84,20 @@ function App() {
                             } />
                             <Route path="/notifications" element={
                                 <ProtectedRoute><NotificationsPage /></ProtectedRoute>
+                            } />
+
+                            {/* AI Tools Routes */}
+                            <Route path="/ai/casting-director" element={
+                                <ProtectedRoute><AICastingDirector /></ProtectedRoute>
+                            } />
+                            <Route path="/ai/assistant" element={
+                                <ProtectedRoute><AIAssistant /></ProtectedRoute>
+                            } />
+                            <Route path="/ai/location-scout" element={
+                                <ProtectedRoute><AILocationScout /></ProtectedRoute>
+                            } />
+                            <Route path="/ai/profile-explain" element={
+                                <ProtectedRoute><ProfileExplanatory /></ProtectedRoute>
                             } />
                         </Routes>
                     </AIProvider>

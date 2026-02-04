@@ -8,7 +8,11 @@ import {
     Film,
     FolderLock,
     LogOut,
-    Video
+    Video,
+    Bot,
+    Sparkles,
+    MapPin,
+    UserSearch
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
@@ -34,6 +38,13 @@ export default function Sidebar() {
         { path: '/files', icon: FolderLock, label: 'Script Locker' },
     ];
 
+    const aiToolsItems = [
+        { path: '/ai/casting-director', icon: Sparkles, label: 'AI Casting Director' },
+        { path: '/ai/assistant', icon: Bot, label: 'AI Assistant' },
+        { path: '/ai/location-scout', icon: MapPin, label: 'AI Location Scout' },
+        { path: '/ai/profile-explain', icon: UserSearch, label: 'Profile Explanatory' },
+    ];
+
     const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
     return (
@@ -49,7 +60,7 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.path);
@@ -68,6 +79,34 @@ export default function Sidebar() {
                         </Link>
                     );
                 })}
+
+                {/* AI Tools Section */}
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 px-4 py-2 mb-2">
+                        <span className="text-xs font-bold text-[#6B6B6B] uppercase tracking-wider">AI Tools</span>
+                        <div className="w-10 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                            <span className="text-[10px] font-bold text-white">BETA</span>
+                        </div>
+                    </div>
+                    {aiToolsItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.path);
+
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${active
+                                    ? 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-600'
+                                    : 'text-[#6B6B6B] hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-600'
+                                    }`}
+                            >
+                                <Icon className="w-5 h-5" />
+                                <span className="font-medium text-sm">{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
             </nav>
 
             {/* User Menu */}
