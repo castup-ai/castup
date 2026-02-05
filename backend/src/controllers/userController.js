@@ -69,20 +69,62 @@ export const updateProfile = async (req, res) => {
     try {
         const { name, department, profilePicture } = req.body;
 
-        const result = await pool.query(
-            `UPDATE users 
-             SET name = COALESCE($1, name), 
-                 department = COALESCE($2, department),
-                 profile_picture = COALESCE($3, profile_picture),
-                 updated_at = CURRENT_TIMESTAMP
-             WHERE id = $4
-             RETURNING id, email, name, department, profile_picture`,
-            [name, department, profilePicture, req.userId]
-        );
+        console.log('📥 Update Profile Request:', {
+            userId: req.userId,
+            hasName: !!name,
+            hasDepartment: !!department,
+            hasProfilePicture: !!profilePicture,
+            profilePictureLength: profilePicture?.length || 0
+        });
+
+        // Build dynamic update query based on what's provided
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        if (name !== undefined) {
+            updates.push(`name = $${paramCount}`);
+            values.push(name);
+            paramCount++;
+        }
+
+        if (department !== undefined) {
+            updates.push(`department = $${paramCount}`);
+            values.push(department);
+            paramCount++;
+        }
+
+        if (profilePicture !== undefined) {
+            updates.push(`profile_picture = $${paramCount}`);
+            values.push(profilePicture);
+            paramCount++;
+        }
+
+        // Always update the timestamp
+        updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+        // Add userId as last parameter
+        values.push(req.userId);
+
+        const query = `
+            UPDATE users 
+            SET ${updates.join(', ')}
+            WHERE id = $${paramCount}
+            RETURNING id, email, name, department, profile_picture
+        `;
+
+        console.log('🔄 Executing query with', updates.length, 'updates');
+
+        const result = await pool.query(query, values);
+
+        console.log('✅ Profile updated successfully:', {
+            userId: result.rows[0].id,
+            hasProfilePicture: !!result.rows[0].profile_picture
+        });
 
         res.json({ success: true, user: result.rows[0] });
     } catch (error) {
-        console.error('Update profile error:', error);
+        console.error('❌ Update profile error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };
