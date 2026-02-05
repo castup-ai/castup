@@ -303,11 +303,11 @@ export default function Profile() {
                     const updatedVideos = type === 'video' ? [...currentVideos, newWork] : currentVideos;
 
                     await portfolioAPI.createOrUpdate({
-                        bio: formData.bio,
+                        bio: formData.bio || '',
                         media: { photos: updatedPhotos, videos: updatedVideos },
-                        externalLinks: socialLinks,
-                        experience: userProfile?.experience || [],
-                        skills: userProfile?.skills || []
+                        externalLinks: socialLinks || {},
+                        experience: experience || [],
+                        skills: skills || []
                     });
 
                     // Update local state after successful API call
@@ -330,7 +330,7 @@ export default function Profile() {
                     });
                 } catch (error) {
                     console.error('Error saving work:', error);
-                    alert('Failed to save work to server.');
+                    alert(`Failed to save ${type}. Please try again.`);
                 }
             };
             reader.readAsDataURL(file);
@@ -351,11 +351,11 @@ export default function Profile() {
 
             // Persist to backend
             await portfolioAPI.createOrUpdate({
-                bio: formData.bio,
+                bio: formData.bio || '',
                 media: { photos: updatedPhotos, videos: updatedVideos },
-                externalLinks: socialLinks,
-                experience: userProfile?.experience || [],
-                skills: userProfile?.skills || []
+                externalLinks: socialLinks || {},
+                experience: experience || [],
+                skills: skills || []
             });
 
             // Update local state
@@ -376,6 +376,7 @@ export default function Profile() {
             console.error('Error deleting work:', error);
             alert('Failed to delete work.');
         }
+
     };
 
     const connections = userProfile?.connections || [];
